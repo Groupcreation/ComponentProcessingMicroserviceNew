@@ -29,53 +29,78 @@ namespace ComponentProcessingMicroservice.Controllers
 
         public static ProcessResponse ResponseObject = new ProcessResponse();
 
-        private IConfiguration _config;
+        private readonly IConfiguration _config;
         public ComponentProcessingMicroserviceController( IConfiguration config)
         {
             
             _config = config;
         }
-        public DateTime DeliveryDate()
+
+        [Route("DeliverDate")]
+        [HttpGet]
+        public dynamic DeliveryDate()
         {
-            DateTime date = DateTime.Now;
-            if (RequestObject.IsPriorityRequest == true && RequestObject.ComponentType == "Integral")
+            try
             {
-                return date.AddDays(2);
+                DateTime date = DateTime.Now;
+                if (RequestObject.IsPriorityRequest == true && RequestObject.ComponentType == "Integral")
+                {
+                    return date.AddDays(2);
+                }
+                else
+                {
+                    return date.AddDays(5);
+                }
             }
-            else
+            catch(Exception)
             {
-                return date.AddDays(5);
+                return BadRequest("Exception from DeliveryDate");
             }
-        }
-        public int PackagingDelivery(string Item, int Count)
-        {
-            var PackigingDeliveryCharge = "";
-            var query = "?item=" + Item + "&count=" + Count;
-            HttpClient client = new HttpClient();
-            HttpResponseMessage result = client.GetAsync(_config["Links:PackagingAndDeliveryMicroService"] +"/GetPackagingDeliveryCharge" + query).Result;
             
-
-            if (result.IsSuccessStatusCode)
-            {
-                PackigingDeliveryCharge = result.Content.ReadAsStringAsync().Result;
-            }
-            else
-            {
-                PackigingDeliveryCharge = "0";
-            }
-            int charge = int.Parse(PackigingDeliveryCharge);
-            return charge;
         }
 
-        public string CardDetails(CardDetails details)
+        [HttpGet]
+        [Route("PackagingDelivery")]
+        public dynamic PackagingDelivery(string Item, int Count)
         {
-            PaymentDetails Response;
-            var data = JsonConvert.SerializeObject(details);
-            var value = new StringContent(data, Encoding.UTF8, "application/json");
-            using (var client = new HttpClient())
+            try
             {
-                var response = client.PostAsync(_config["Links:PaymentMicroService"] +"/ProcessPayment", value).Result;
-                
+                string PackigingDeliveryCharge;
+                var query = "?item=" + Item + "&count=" + Count;
+                HttpClient client = new HttpClient();
+                HttpResponseMessage result = client.GetAsync(_config["Links:PackagingAndDeliveryMicroService"] + "/GetPackagingDeliveryCharge" + query).Result;
+
+
+                if (result.IsSuccessStatusCode)
+                {
+                    PackigingDeliveryCharge = result.Content.ReadAsStringAsync().Result;
+                }
+                else
+                {
+                    PackigingDeliveryCharge = "0";
+                }
+                int charge = int.Parse(PackigingDeliveryCharge);
+                return charge;
+            }
+            catch(Exception)
+            {
+                return BadRequest("Exception from PackagingDelivery");
+            }
+            
+        }
+
+        [HttpPost]
+        [Route("CardDetails")]
+        public dynamic CardDetails(CardDetails details)
+        {
+            try
+            {
+                PaymentDetails Response;
+                var data = JsonConvert.SerializeObject(details);
+                var value = new StringContent(data, Encoding.UTF8, "application/json");
+                using var client = new HttpClient();
+                var response = client.PostAsync(_config["Links:PaymentMicroService"] + "/ProcessPayment", value).Result;
+
                 if (response.IsSuccessStatusCode)
                 {
                     var result = response.Content.ReadAsStringAsync().Result;
@@ -94,98 +119,142 @@ namespace ComponentProcessingMicroservice.Controllers
                     return "Failed";
                 }
             }
+            catch (Exception)
+            {
+                return BadRequest( "Exception from CardDetails");
+            }
+            
+           
         }
-        public int ProcessId()
+      
+        [Route("ProcessId")]
+        [HttpGet]
+        public dynamic ProcessId()
         {
-            int n = 0;
-            Random _random = new Random();
-            n = _random.Next(500, 1000);
-            return n;
+            try
+            {
+                int n;
+                Random _random = new Random();
+                n = _random.Next(500, 1000);
+                return n;
+            }
+            catch (Exception)
+            {
+                return BadRequest("Exception from ProcessId");
+            }
+          
         }
 
-        public int ProcessingCharge(string Workflow)
+        [Route("Workflow")]
+        [HttpGet]
+        public dynamic ProcessingCharge()
         {
-            int ProcessingCharge = 0;
-            Workflow = RequestObject.ComponentType;
-            if (Workflow == "Integral")
+            try
             {
-                IntegralWorkflow integral = new IntegralWorkflow();
-                ProcessingCharge = integral.ProcessingCharge(RequestObject.IsPriorityRequest);
+                int ProcessingCharge;
+                string Workflow = RequestObject.ComponentType;
+                if (Workflow == "Integral")
+                {
+                    IntegralWorkflow integral = new IntegralWorkflow();
+                    ProcessingCharge = integral.ProcessingCharge(RequestObject.IsPriorityRequest);
+                }
+                else
+                {
+                    AccessoryWorkflow accessory = new AccessoryWorkflow();
+                    ProcessingCharge = accessory.ProcessingCharge(false);
+                }
+                return ProcessingCharge;
             }
-            else
+            catch (Exception)
             {
-                AccessoryWorkflow accessory = new AccessoryWorkflow();
-                ProcessingCharge = accessory.ProcessingCharge(false);
+                return BadRequest("Exception from ProcessingCharge");
             }
-            return ProcessingCharge;
+            
         }
 
         // GET: api/ComponentProcessingMicroservice/obj
         [HttpGet]
         [Authorize]
         
-        public string GetRequest(string json)
+        public dynamic GetRequest(string json)
         {
+
+            try
+            {
+                _log4net.Info("GetRequest() called with json input");
+                RequestObject = JsonConvert.DeserializeObject<ProcessRequest>(json);
+
+                RequestObject = new ProcessRequest
+                {
+                    Name = RequestObject.Name,
+                    ContactNumber = RequestObject.ContactNumber,
+                    CreditCardNumber = RequestObject.CreditCardNumber,
+                    ComponentType = RequestObject.ComponentType,
+                    ComponentName = RequestObject.ComponentName,
+                    Quantity = RequestObject.Quantity,
+                    IsPriorityRequest = RequestObject.IsPriorityRequest
+
+                };
+                int Processing = ProcessId();
+
+
+
+                ResponseObject = new ProcessResponse
+                {
+                    RequestId = Processing,
+                    ProcessingCharge = ProcessingCharge(),
+                    PackagingAndDeliveryCharge = PackagingDelivery(RequestObject.ComponentType, RequestObject.Quantity),
+                    DateOfDelivery = DeliveryDate()
+
+                };
+
+                var ResponseString = JsonConvert.SerializeObject(ResponseObject);
+                return ResponseString;
+
+            }
+            catch (Exception)
+            {
+                return BadRequest("Exception from GetRequest");
+            }
             
-            _log4net.Info("GetRequest() called with json input");
-            RequestObject = JsonConvert.DeserializeObject<ProcessRequest>(json);
-
-            RequestObject = new ProcessRequest
-            {
-                Name = RequestObject.Name,
-                ContactNumber = RequestObject.ContactNumber,
-                CreditCardNumber = RequestObject.CreditCardNumber,
-                ComponentType = RequestObject.ComponentType,
-                ComponentName = RequestObject.ComponentName,
-                Quantity = RequestObject.Quantity,
-                IsPriorityRequest = RequestObject.IsPriorityRequest
-
-            };
-            int Processing = ProcessId();
-
-
-
-            ResponseObject = new ProcessResponse
-            {
-                RequestId = Processing,
-                ProcessingCharge = ProcessingCharge(RequestObject.ComponentType),
-                PackagingAndDeliveryCharge = PackagingDelivery(RequestObject.ComponentType, RequestObject.Quantity),
-                DateOfDelivery = DeliveryDate()
-
-            };
-
-            var ResponseString = JsonConvert.SerializeObject(ResponseObject);
-            return ResponseString;
-
+            
         }
 
         // [HttpPost("{message}")]
         [HttpPost]
-        public string GetUserMessage(Submission message)
+        public dynamic GetUserMessage(Submission message)
         {
-            _log4net.Info("GetUserMessage() called with user message as input");
-            if (message.Result == "True")
+            try
             {
-                CardDetails detail = new CardDetails()
+                _log4net.Info("GetUserMessage() called with user message as input");
+                if (message.Result == "True")
                 {
-                    CreditCardNumber = RequestObject.CreditCardNumber,
-                    CreditLimit = Limit,
-                    ProcessingCharge = ResponseObject.ProcessingCharge + ResponseObject.PackagingAndDeliveryCharge
-                };
-                var result = CardDetails(detail);
-                if (result == "Successful")
-                {
-                    return "Success";
+                    CardDetails detail = new CardDetails()
+                    {
+                        CreditCardNumber = RequestObject.CreditCardNumber,
+                        CreditLimit = Limit,
+                        ProcessingCharge = ResponseObject.ProcessingCharge + ResponseObject.PackagingAndDeliveryCharge
+                    };
+                    var result = CardDetails(detail);
+                    if (result == "Successful")
+                    {
+                        return "Success";
+                    }
+                    else
+                    {
+                        return "Failed";
+                    }
                 }
                 else
                 {
-                    return "Failed";
+                    return "Payment not initiated";
                 }
             }
-            else
+            catch (Exception)
             {
-                return "Payment not initiated";
+                return BadRequest("Exception from GetUserMessage");
             }
+            
         } 
     }
 }

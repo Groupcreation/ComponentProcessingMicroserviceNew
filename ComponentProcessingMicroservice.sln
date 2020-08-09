@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentProcessingMicroservice", "ComponentProcessingMicroservice.csproj", "{F66E6136-ADDD-49D8-BB96-90ABD5DFF6CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ComponentProcessingMicroservice", "ComponentProcessingMicroservice.csproj", "{F66E6136-ADDD-49D8-BB96-90ABD5DFF6CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ComponentProcessingMicroserviceTestProject", "..\ComponentProcessingMicroserviceTestProject\ComponentProcessingMicroserviceTestProject.csproj", "{DE4F6D77-0888-4005-8B52-DFBD9147DD0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{F66E6136-ADDD-49D8-BB96-90ABD5DFF6CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F66E6136-ADDD-49D8-BB96-90ABD5DFF6CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F66E6136-ADDD-49D8-BB96-90ABD5DFF6CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE4F6D77-0888-4005-8B52-DFBD9147DD0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE4F6D77-0888-4005-8B52-DFBD9147DD0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE4F6D77-0888-4005-8B52-DFBD9147DD0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE4F6D77-0888-4005-8B52-DFBD9147DD0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
