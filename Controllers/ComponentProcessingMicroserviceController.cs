@@ -172,7 +172,7 @@ namespace ComponentProcessingMicroservice.Controllers
             
         }
 
-        // GET: api/ComponentProcessingMicroservice/obj
+       
         [HttpGet]
         [Authorize]
         
@@ -220,7 +220,6 @@ namespace ComponentProcessingMicroservice.Controllers
             
         }
 
-        // [HttpPost("{message}")]
         [HttpPost]
         public dynamic GetUserMessage(Submission message)
         {
